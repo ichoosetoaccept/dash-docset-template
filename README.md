@@ -8,9 +8,13 @@ A [Copier](https://github.com/copier-org/copier) template for creating Dash docs
 - Web scraper with support for sitemap.xml or llms.txt URL discovery
 - SQLite search index builder with customizable parsers
 - TOC anchor injection for in-page navigation
-- Docset validation script
-- Pre-commit hooks with prek (ty type checking, standard hooks)
+- Docset validation script (`verify.py`)
+- Dash contribution checker (`verify_contribution.py`)
+- Contribution workflow (`contribute.py`) for submitting to Dash-User-Contributions
+- Pytest test suite with pre-commit hook
+- Pre-commit hooks with prek (ty type checking, pytest, standard hooks)
 - uv for dependency management
+- Poe tasks for common commands (`scrape`, `build`, `verify`, `test`, `contribute`)
 
 ## Usage
 
@@ -38,6 +42,9 @@ copier copy /path/to/dash-docset-template my-new-docset
 - **project_name**: Name of your project (e.g., `raycast-docset`)
 - **docset_name**: Display name for the docset (e.g., `Raycast`)
 - **docs_url**: Base URL of documentation (e.g., `https://developers.raycast.com`)
+- **author_name**: Your name for attribution
+- **author_link**: Your GitHub profile URL
+- **repo_url**: GitHub repo URL for this docset project
 
 ### Set up the generated project
 
@@ -70,12 +77,19 @@ dash-docset-template/
 │   │   ├── scraper.py.jinja          # Auto-detects sitemap/llms.txt
 │   │   ├── builder.py.jinja
 │   │   └── parsers.py.jinja
+│   ├── tests/                        # Pytest test suite
+│   │   ├── test_builder.py.jinja
+│   │   ├── test_verify.py.jinja
+│   │   ├── test_verify_contribution.py
+│   │   └── test_contribute.py
 │   ├── main.py.jinja
-│   ├── verify.py.jinja
+│   ├── verify.py.jinja               # Docset quality validation
+│   ├── verify_contribution.py.jinja  # Dash contribution requirements
+│   ├── contribute.py.jinja           # Contribution workflow
 │   ├── pyproject.toml.jinja
 │   ├── README.md.jinja
 │   ├── .gitignore
-│   └── .pre-commit-config.yaml
+│   └── .pre-commit-config.yaml       # Includes pytest hook
 └── README.md
 ```
 

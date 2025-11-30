@@ -16,6 +16,21 @@ docs_url:
   help: "Documentation URL (e.g., 'https://developers.raycast.com')"
   validator: "{% if not docs_url.startswith('http') %}URL must start with http:// or https://{% endif %}"
 
+author_name:
+  type: str
+  help: "Your name for attribution"
+  default: ""
+
+author_link:
+  type: str
+  help: "Your GitHub profile URL (e.g., 'https://github.com/username')"
+  default: ""
+
+repo_url:
+  type: str
+  help: "GitHub repo URL for this docset (e.g., 'https://github.com/username/my-docset')"
+  default: ""
+
 # Derived values (not prompted)
 docset_identifier:
   type: str
