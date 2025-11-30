@@ -31,7 +31,7 @@ pipx install copier
 ### Create a new docset project
 
 ```bash
-copier copy gh:YOUR_USERNAME/dash-docset-template my-new-docset
+copier copy gh:ichoosetoaccept/dash-docset-template my-new-docset
 
 # Or from a local clone
 copier copy /path/to/dash-docset-template my-new-docset
@@ -63,7 +63,13 @@ prek install
 ### Build the docset
 
 ```bash
-uv run python main.py --scrape
+poe scrape   # Download documentation
+poe build    # Build the docset
+poe verify   # Validate the docset
+poe test     # Run tests
+
+# Or all at once:
+poe all
 ```
 
 ## Template Structure
