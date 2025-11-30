@@ -199,8 +199,15 @@ class DocsetBuilder:
 
         Returns:
             HTML content with fixed paths
+
+        TODO: Customize this method for your documentation site. Common fixes:
+        - Remove analytics/tracking scripts (Google Analytics, Tag Manager)
+        - Remove cookie consent banners
+        - Fix absolute paths to be relative
+        - Remove navigation elements that don't work offline
+        - Neutralize links to sections you didn't scrape
         """
-        # Remove analytics scripts
+        # Example: Remove Google Analytics/Tag Manager scripts
         content = re.sub(
             r"<script[^>]*googletagmanager[^>]*>.*?</script>",
             "",
@@ -213,6 +220,10 @@ class DocsetBuilder:
             content,
             flags=re.DOTALL | re.IGNORECASE,
         )
+
+        # TODO: Add site-specific path fixes here
+        # Example: Fix absolute paths to relative
+        # content = re.sub(r'href="/docs/([^"]*)"', r'href="../\1"', content)
 
         return content
 

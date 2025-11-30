@@ -1,35 +1,16 @@
-"""Tests for the docset verification."""
+"""Tests for the docset verification.
+
+These tests cover universal Dash docset verification.
+Add site-specific tests as you customize the verifier.
+"""
 
 import re
 
 import pytest
 
 
-class TestUnwantedContentDetection:
-    """Test patterns that detect tracking/cookie scripts."""
-
-    @pytest.fixture
-    def unwanted_patterns(self):
-        return [
-            (re.compile(r"googletagmanager\.com", re.IGNORECASE), "Google Tag Manager"),
-            (re.compile(r"google-analytics\.com", re.IGNORECASE), "Google Analytics"),
-            (re.compile(r"cdn\.cookielaw\.org", re.IGNORECASE), "Cookie consent"),
-            (re.compile(r"cookieconsent", re.IGNORECASE), "Cookie consent script"),
-        ]
-
-    def test_google_tag_manager_detected(self, unwanted_patterns):
-        html = '<script src="https://www.googletagmanager.com/gtag/js"></script>'
-        detected = [desc for pattern, desc in unwanted_patterns if pattern.search(html)]
-        assert "Google Tag Manager" in detected
-
-    def test_clean_html_not_flagged(self, unwanted_patterns):
-        html = '<html><body><h1>Hello</h1></body></html>'
-        detected = [desc for pattern, desc in unwanted_patterns if pattern.search(html)]
-        assert detected == []
-
-
 class TestTocAnchorValidation:
-    """Test TOC anchor placement detection."""
+    """Test TOC anchor placement - universal for all docsets."""
 
     @pytest.fixture
     def bad_anchor_pattern(self):
@@ -37,10 +18,12 @@ class TestTocAnchorValidation:
         return re.compile(r'<a\s[^>]*dashAnchor[^>]*>\s*</a>\s*<h[123]', re.IGNORECASE)
 
     def test_anchor_before_heading_detected(self, bad_anchor_pattern):
+        """Anchors before headings cause title cutoff in Dash."""
         html = '<a name="//apple_ref/cpp/Section/Foo" class="dashAnchor"></a><h2>Foo</h2>'
         assert bad_anchor_pattern.search(html)
 
     def test_anchor_inside_heading_not_detected(self, bad_anchor_pattern):
+        """Anchors inside headings work correctly."""
         html = '<h2><a name="//apple_ref/cpp/Section/Foo" class="dashAnchor"></a>Foo</h2>'
         assert not bad_anchor_pattern.search(html)
 
@@ -60,3 +43,31 @@ class TestDashAnchorDetection:
         '''
         matches = re.findall(r'class="dashAnchor"', html)
         assert len(matches) == 3
+
+
+class TestUnwantedContentDetection:
+    """Test patterns that detect tracking/cookie scripts."""
+
+    @pytest.fixture
+    def unwanted_patterns(self):
+        return [
+            (re.compile(r"googletagmanager\.com", re.IGNORECASE), "Google Tag Manager"),
+            (re.compile(r"google-analytics\.com", re.IGNORECASE), "Google Analytics"),
+        ]
+
+    def test_tracking_detected(self, unwanted_patterns):
+        html = '<script src="https://www.googletagmanager.com/gtag/js"></script>'
+        detected = [desc for pattern, desc in unwanted_patterns if pattern.search(html)]
+        assert "Google Tag Manager" in detected
+
+    def test_clean_html_not_flagged(self, unwanted_patterns):
+        html = '<html><body><h1>Hello</h1></body></html>'
+        detected = [desc for pattern, desc in unwanted_patterns if pattern.search(html)]
+        assert detected == []
+
+
+# TODO: Add site-specific tests here as you customize the verifier
+# Example:
+# class TestBrokenLinkDetection:
+#     """Test detection of broken links specific to your site."""
+#     pass

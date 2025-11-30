@@ -1,58 +1,72 @@
-"""Tests for the docset builder."""
+"""Tests for the docset builder.
+
+These tests cover universal Dash docset functionality.
+Add site-specific tests as you customize the builder.
+"""
 
 import re
+from urllib.parse import quote
 
 import pytest
 
 
-class TestDepthCalculation:
-    """Test the relative path prefix calculation."""
-
-    def calculate_depth(self, path_parts: int) -> str:
-        """Calculate ../ prefix based on depth from documents root."""
-        depth = path_parts - 1  # -1 for the file itself
-        return "../" * depth
-
-    def test_root_level_file(self):
-        assert self.calculate_depth(1) == ""
-
-    def test_one_level_deep(self):
-        assert self.calculate_depth(2) == "../"
-
-    def test_two_levels_deep(self):
-        assert self.calculate_depth(3) == "../../"
-
-    def test_three_levels_deep(self):
-        assert self.calculate_depth(4) == "../../../"
-
-
 class TestDashAnchorFormat:
-    """Test Dash anchor name format."""
+    """Test Dash anchor name format - universal for all docsets."""
 
     def test_anchor_format(self):
+        """Anchor names follow Apple's format."""
         entry_type = "Section"
         name = "Getting Started"
-        from urllib.parse import quote
         encoded_name = quote(name, safe="")
         anchor_name = f"//apple_ref/cpp/{entry_type}/{encoded_name}"
         assert anchor_name == "//apple_ref/cpp/Section/Getting%20Started"
 
+    def test_spaces_encoded(self):
+        """Spaces are URL-encoded."""
+        name = "Hello World"
+        encoded = quote(name, safe="")
+        assert encoded == "Hello%20World"
+
     def test_special_characters_encoded(self):
-        from urllib.parse import quote
+        """Special characters are URL-encoded."""
         name = "C++ & Python"
         encoded = quote(name, safe="")
         assert encoded == "C%2B%2B%20%26%20Python"
 
 
-class TestScrollMarginCss:
-    """Test CSS injection for scroll margin."""
+class TestAnalyticsRemoval:
+    """Test analytics script removal patterns."""
 
-    def test_css_selector_format(self):
-        css = """
-            h1:has(.dashAnchor), h2:has(.dashAnchor), h3:has(.dashAnchor) {
-                scroll-margin-top: 80px !important;
-            }
-        """
-        assert "scroll-margin-top" in css
-        assert ":has(.dashAnchor)" in css
-        assert "80px" in css
+    @pytest.fixture
+    def gtm_pattern(self):
+        return re.compile(
+            r"<script[^>]*googletagmanager[^>]*>.*?</script>",
+            re.DOTALL | re.IGNORECASE,
+        )
+
+    @pytest.fixture
+    def ga_pattern(self):
+        return re.compile(
+            r"<script[^>]*google-analytics[^>]*>.*?</script>",
+            re.DOTALL | re.IGNORECASE,
+        )
+
+    def test_gtm_script_detected(self, gtm_pattern):
+        html = '<script src="https://www.googletagmanager.com/gtag/js"></script>'
+        assert gtm_pattern.search(html)
+
+    def test_ga_script_detected(self, ga_pattern):
+        html = '<script src="https://www.google-analytics.com/analytics.js"></script>'
+        assert ga_pattern.search(html)
+
+    def test_normal_script_not_detected(self, gtm_pattern, ga_pattern):
+        html = '<script src="/js/app.js"></script>'
+        assert not gtm_pattern.search(html)
+        assert not ga_pattern.search(html)
+
+
+# TODO: Add site-specific tests here as you customize the builder
+# Example:
+# class TestNavbarRemoval:
+#     """Test navbar removal for your specific site."""
+#     pass
