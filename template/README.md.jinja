@@ -1,0 +1,88 @@
+# {{ docset_name }} Docset Generator
+
+Generate a [Dash](https://kapeli.com/dash) docset for [{{ docset_name }} documentation]({{ docs_url }}).
+
+## Features
+
+- Scrapes all documentation from {{ docs_domain }}
+- Creates a properly indexed Dash docset with semantic search
+- Indexes API references, guides, and more
+- Supports offline documentation browsing
+
+## Requirements
+
+- Python 3.12+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) - fast Python package manager
+
+## Installation
+
+```bash
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone the repository
+git clone <repo-url>
+cd {{ project_name }}
+
+# Install dependencies
+uv sync
+
+# Install pre-commit hooks
+prek install
+```
+
+## Usage
+
+### Quick Start (with poe)
+
+```bash
+poe scrape    # Scrape docs and build docset
+poe verify    # Validate the docset
+poe all       # Scrape + verify
+poe rebuild   # Clean + scrape + verify
+poe clean     # Remove output/ and .cache/
+poe check     # Run type checker
+```
+
+### Manual Commands
+
+```bash
+# Scrape docs from {{ docs_domain }} and build docset
+uv run main.py --scrape
+
+# Build from existing scraped docs
+uv run main.py --source .cache/{{ docset_identifier }}-docs
+
+# Validate the docset
+uv run verify.py -v
+```
+
+## Output
+
+The generated docset will be at `output/{{ docset_name }}.docset`.
+
+To install in Dash:
+1. Open Dash
+2. Go to Preferences > Docsets
+3. Click + and select the `.docset` file
+
+Or simply double-click the `.docset` file.
+
+## Project Structure
+
+```
+{{ project_name }}/
+├── main.py                     # CLI entry point
+├── {{ docset_identifier }}_docset/
+│   ├── __init__.py
+│   ├── scraper.py              # Web scraper for docs
+│   ├── builder.py              # Docset builder
+│   └── parsers.py              # Index entry parsers
+├── verify.py                   # Docset validation
+├── pyproject.toml
+└── README.md
+```
+
+## License
+
+MIT

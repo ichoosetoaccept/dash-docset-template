@@ -1,0 +1,35 @@
+# Copier template configuration for Dash docset generators
+_min_copier_version: "9.0.0"
+
+project_name:
+  type: str
+  help: "Project name (e.g., 'raycast-docset')"
+  validator: "{% if not project_name %}Project name is required{% endif %}"
+
+docset_name:
+  type: str
+  help: "Display name for the docset (e.g., 'Raycast')"
+  default: "{{ project_name | replace('-docset', '') | replace('_', ' ') | title }}"
+
+docs_url:
+  type: str
+  help: "Documentation URL (e.g., 'https://developers.raycast.com')"
+  validator: "{% if not docs_url.startswith('http') %}URL must start with http:// or https://{% endif %}"
+
+# Derived values (not prompted)
+docset_identifier:
+  type: str
+  default: "{{ docset_name | lower | replace(' ', '_') }}"
+  when: false
+
+docset_keyword:
+  type: str
+  default: "{{ docset_name | lower | replace(' ', '') }}"
+  when: false
+
+docs_domain:
+  type: str
+  default: "{{ docs_url | replace('https://', '') | replace('http://', '') | regex_replace('/.*', '') }}"
+  when: false
+
+_subdirectory: template

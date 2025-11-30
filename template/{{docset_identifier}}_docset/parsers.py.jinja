@@ -1,0 +1,169 @@
+"""Parsers for extracting index entries from {{ docset_name }} documentation HTML."""
+
+import re
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterator
+from urllib.parse import unquote
+
+from bs4 import BeautifulSoup
+
+
+@dataclass
+class IndexEntry:
+    """Represents a single entry in the Dash search index."""
+
+    name: str
+    entry_type: str
+    path: str
+
+
+def parse_html_file(file_path: Path) -> BeautifulSoup:
+    """Parse an HTML file and return a BeautifulSoup object."""
+    with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+        return BeautifulSoup(f.read(), "lxml")
+
+
+def get_title_from_soup(soup: BeautifulSoup) -> str | None:
+    """Extract the page title from a BeautifulSoup object."""
+    # Try to find the main heading first
+    h1 = soup.find("h1")
+    if h1:
+        title = h1.get_text().strip()
+        if title:
+            return title
+
+    # Fall back to title tag
+    title_tag = soup.find("title")
+    if title_tag:
+        title = title_tag.get_text()
+        # Titles are usually "Name | Site" or "Name - Site"
+        if " | " in title:
+            return title.split(" | ")[0].strip()
+        if " - " in title:
+            return title.split(" - ")[0].strip()
+        return title.strip()
+    return None
+
+
+class DashAnchorParser:
+    """Parser that extracts dashAnchor entries embedded in HTML.
+
+    Our TOC injector creates anchors like:
+    <a name="//apple_ref/cpp/Section/Name" class="dashAnchor"></a>
+    """
+
+    ANCHOR_PATTERN = re.compile(r"//apple_ref/(?:cpp/)?(\w+)/(.+)")
+
+    # Generic/noisy entries to skip
+    SKIP_NAMES = {
+        "example",
+        "examples",
+        "see also",
+    }
+
+    def matches(self, relative_path: str) -> bool:
+        """Match any HTML file."""
+        return relative_path.endswith(".html")
+
+    def parse(self, file_path: Path, relative_path: str) -> Iterator[IndexEntry]:
+        """Extract dashAnchor entries from the HTML."""
+        soup = parse_html_file(file_path)
+
+        for anchor in soup.find_all("a", class_="dashAnchor"):
+            name_attr = anchor.get("name", "")
+            if not isinstance(name_attr, str):
+                continue
+            match = self.ANCHOR_PATTERN.match(name_attr)
+
+            if match:
+                entry_type = match.group(1)
+                entry_name = unquote(match.group(2))
+
+                if entry_name.lower() in self.SKIP_NAMES:
+                    continue
+
+                # Find anchor ID
+                anchor_id = None
+                next_sibling = anchor.find_next_sibling()
+                if next_sibling and next_sibling.get("id"):
+                    anchor_id = next_sibling.get("id")
+
+                path = relative_path
+                if anchor_id:
+                    path = f"{relative_path}#{anchor_id}"
+
+                if len(entry_name) > 80:
+                    entry_name = entry_name[:77] + "..."
+
+                yield IndexEntry(
+                    name=entry_name,
+                    entry_type=entry_type,
+                    path=path,
+                )
+
+
+class GuideParser:
+    """Parser for guide and documentation pages."""
+
+    def matches(self, relative_path: str) -> bool:
+        """Match documentation HTML files."""
+        if not relative_path.endswith(".html"):
+            return False
+        return "{{ docs_domain }}" in relative_path
+
+    def parse(self, file_path: Path, relative_path: str) -> Iterator[IndexEntry]:
+        """Parse a documentation page and yield index entries."""
+        soup = parse_html_file(file_path)
+        title = get_title_from_soup(soup)
+
+        if not title or title in ["{{ docset_name }}"]:
+            return
+
+        # TODO: Customize entry types based on path patterns
+        # Example:
+        # if "api-reference" in relative_path:
+        #     entry_type = "Class"
+        # elif "examples" in relative_path:
+        #     entry_type = "Sample"
+        # else:
+        #     entry_type = "Guide"
+        entry_type = "Guide"
+
+        yield IndexEntry(
+            name=title,
+            entry_type=entry_type,
+            path=relative_path,
+        )
+
+        # Parse sections from headings
+        yield from self._parse_sections(soup, relative_path, title)
+
+    def _parse_sections(
+        self, soup: BeautifulSoup, relative_path: str, parent_title: str
+    ) -> Iterator[IndexEntry]:
+        """Parse section headings from the page."""
+        for heading in soup.find_all(["h2", "h3"]):
+            heading_text = heading.get_text().strip()
+            heading_id = heading.get("id")
+
+            if not heading_id or not heading_text:
+                continue
+
+            # Skip generic headings
+            skip_headings = {"example", "examples", "see also"}
+            if heading_text.lower() in skip_headings:
+                continue
+
+            yield IndexEntry(
+                name=heading_text,
+                entry_type="Section",
+                path=f"{relative_path}#{heading_id}",
+            )
+
+
+# All parsers in order of specificity
+ALL_PARSERS = [
+    DashAnchorParser(),
+    GuideParser(),
+]
