@@ -3,32 +3,44 @@ _min_copier_version: "9.0.0"
 
 project_name:
   type: str
-  help: "Project name (e.g., 'raycast-docset')"
+  help: |
+    Name for your project directory and package.
+    Example: raycast-docset, kubernetes-docs, react-docset
   validator: "{% if not project_name %}Project name is required{% endif %}"
 
 docset_name:
   type: str
-  help: "Display name for the docset (e.g., 'Raycast')"
+  help: |
+    Display name shown in Dash. Should match the official product name.
+    Example: Raycast, Kubernetes, React
   default: "{{ project_name | replace('-docset', '') | replace('_', ' ') | title }}"
 
 docs_url:
   type: str
-  help: "Documentation URL (e.g., 'https://developers.raycast.com')"
+  help: |
+    Full URL to the documentation site you want to scrape.
+    Example: https://developers.raycast.com, https://kubernetes.io/docs, https://react.dev
   validator: "{% if not docs_url.startswith('http') %}URL must start with http:// or https://{% endif %}"
 
 author_name:
   type: str
-  help: "Your name for attribution"
+  help: |
+    Your name (shown in Dash docset credits and contribution README).
+    Example: John Doe
   default: ""
 
 author_link:
   type: str
-  help: "Your GitHub profile URL (e.g., 'https://github.com/username')"
+  help: |
+    Link to your profile (shown in Dash docset credits).
+    Example: https://github.com/johndoe
   default: ""
 
 repo_url:
   type: str
-  help: "GitHub repo URL for this docset (e.g., 'https://github.com/username/my-docset')"
+  help: |
+    Where you'll host this docset generator (for contribution README).
+    Example: https://github.com/johndoe/raycast-docset
   default: ""
 
 # Derived values (not prompted)
